@@ -32,6 +32,23 @@ export type ActionResult = {
   message: string
 }
 
+/** 批量处理时每一条的处置结论，逐条报结果用 */
+export type BatchItemResult = {
+  id: number
+  code: string
+  ok: boolean
+  /** published 发布成功 / released 解除成功 / skipped 幂等跳过 / denied 被挡回 */
+  outcome: 'published' | 'released' | 'skipped' | 'denied'
+  message: string
+}
+
+export type BatchResult = {
+  items: BatchItemResult[]
+  successCount: number
+  skipCount: number
+  deniedCount: number
+}
+
 export type OverviewResult = {
   cards: { label: string; value: number }[]
   modules: { name: string; created: number; pending: number; abnormal: number }[]
