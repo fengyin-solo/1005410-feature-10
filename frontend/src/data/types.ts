@@ -17,6 +17,8 @@ export type ModuleMeta = {
   statuses: string[]
   actions: string[]
   actionTargets: Record<string, string>
+  /** 单向流转约束：登记了的模块只许按表走，没登记的模块维持原样。 */
+  transitions?: Record<string, string[]>
   metrics: string[]
 }
 

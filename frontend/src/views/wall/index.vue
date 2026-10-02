@@ -67,6 +67,55 @@
       <span>共 {{ total }} 条支挡结构记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
+
+    <section class="transfer-panel">
+      <header class="transfer-head">
+        <div>
+          <h3>待转移预警清单</h3>
+          <p class="page-desc">预警发布的结论会落到这里，按预警编号去重，重复提交不会多出第二条。</p>
+        </div>
+        <label class="filter-item">
+          <span>发布渠道</span>
+          <select v-model="transferChannel">
+            <option value="">全部渠道</option>
+            <option v-for="channel in channelOptions" :key="channel" :value="channel">{{ channel }}</option>
+          </select>
+        </label>
+      </header>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th v-for="column in transferColumns" :key="column">{{ column }}</th>
+            <th>转移状态</th>
+            <th>可执行动作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in transferRows" :key="String(row.id)">
+            <td v-for="column in transferColumns" :key="column">{{ row[column] === '' ? '—' : (row[column] ?? '—') }}</td>
+            <td>{{ row.status }}</td>
+            <td class="row-actions">
+              <button
+                v-if="row.status === '待转移'"
+                class="link"
+                type="button"
+                @click="runTransfer(row)"
+              >
+                确认转移
+              </button>
+              <span v-else class="muted-text">已办结</span>
+            </td>
+          </tr>
+          <tr v-if="!transferRows.length">
+            <td :colspan="transferColumns.length + 2" class="empty-state">暂无待转移预警，预警发布后会自动落到这张清单</td>
+          </tr>
+        </tbody>
+      </table>
+      <footer class="page-foot">
+        <span>共 {{ transferRows.length }} 条待转移预警</span>
+        <span v-if="transferMessage" class="error-text">{{ transferMessage }}</span>
+      </footer>
+    </section>
   </section>
 </template>
 
@@ -79,6 +128,8 @@ import {
   moduleMeta,
   runAction as applyAction,
 } from '@/api/local-service'
+import { confirmTransfer, listTransferWarnings } from '@/api/warning-service'
+import { WARNING_CHANNELS } from '@/data/warning-rules'
 import type { EntryRow } from '@/data/types'
 
 const meta = moduleMeta('wall')
@@ -92,6 +143,31 @@ const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+
+// 待转移预警清单：数据来自预警发布的结论，渠道目录与预警发布页是同一套。
+const transferColumns = ["预警编号", "发布对象", "预警级别", "触发雨量", "发布渠道", "发布时间"]
+const channelOptions = WARNING_CHANNELS
+const transferAll = ref<EntryRow[]>([])
+const transferChannel = ref('')
+const transferMessage = ref('')
+const transferRows = computed(() =>
+  transferChannel.value === ''
+    ? transferAll.value
+    : transferAll.value.filter((row) => String(row['发布渠道']) === transferChannel.value),
+)
+
+function reloadTransfers() {
+  transferAll.value = listTransferWarnings()
+}
+
+function runTransfer(row: EntryRow) {
+  transferMessage.value = ''
+  const result = confirmTransfer(Number(row.id))
+  if (!result.ok) {
+    transferMessage.value = result.message
+  }
+  reloadTransfers()
+}
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
@@ -133,5 +209,8 @@ function reload() {
   }
 }
 
-onMounted(reload)
+onMounted(() => {
+  reload()
+  reloadTransfers()
+})
 </script>

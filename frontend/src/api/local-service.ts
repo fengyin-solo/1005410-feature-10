@@ -43,6 +43,9 @@ export function runAction(key: string, id: number, action: string): ActionResult
   if (current === target) {
     return { ok: false, message: `${meta.entity}已经是「${target}」，不用重复操作` }
   }
+  if (meta.transitions && !(meta.transitions[current] ?? []).includes(target)) {
+    return { ok: false, message: `${meta.entity}状态只进不退，「${current}」不能流转到「${target}」` }
+  }
   const lastStatus = meta.statuses[meta.statuses.length - 1]
   const updated: EntryRow = {
     ...rows[index],

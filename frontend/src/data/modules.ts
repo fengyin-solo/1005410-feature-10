@@ -1,4 +1,5 @@
 import type { ModuleMeta } from './types'
+import { WARNING_TRANSITIONS } from './warning-rules'
 
 // 模块元数据由仓库生成时写入：字段、状态、动作、流转目标都在这里，页面不再各自写一遍。
 export const MODULES: ModuleMeta[] = [
@@ -55,6 +56,7 @@ export const MODULES: ModuleMeta[] = [
     statuses: ["待发布", "已发布", "已解除", "已误报"],
     actions: ["确认发布", "解除预警", "标记误报"],
     actionTargets: {"确认发布": "已发布", "解除预警": "已解除", "标记误报": "已误报"},
+    transitions: WARNING_TRANSITIONS,
     metrics: ["待发布预警", "已发布预警", "本月误报数"],
   },
   {
